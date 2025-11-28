@@ -5,11 +5,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useAppearance } from '@/hooks/use-appearance';
 import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import { Form, Head } from '@inertiajs/react';
+import { useEffect } from 'react';
 
 interface LoginProps {
     status?: string;
@@ -22,6 +24,12 @@ export default function Login({
     canResetPassword,
     canRegister,
 }: LoginProps) {
+    const { updateAppearance } = useAppearance();
+
+    useEffect(() => {
+        updateAppearance('light');
+    }, [updateAppearance]);
+
     return (
         <AuthLayout
             title="Log in to your account"

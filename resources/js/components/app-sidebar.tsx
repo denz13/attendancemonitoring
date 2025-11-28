@@ -13,7 +13,17 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
+import {
+    BarChart3,
+    BookOpen,
+    CalendarDays,
+    CircleHelp,
+    Folder,
+    LayoutGrid,
+    QrCode,
+    UserCog,
+    Users,
+} from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -22,28 +32,58 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
-];
-
-const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
+        title: 'Users',
+        href: '/users',
+        icon: Users,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
+        title: 'Reports',
+        href: '/reports',
+        icon: BarChart3,
+    },
+    {
+        title: 'QR Codes',
+        href: '/qr-codes',
+        icon: QrCode,
+    },
+    {
+        title: 'Schedules',
+        href: '/schedules',
+        icon: CalendarDays,
+    },
+    {
+        title: 'Subject',
+        href: '/subject',
         icon: BookOpen,
+    },
+    {
+        title: 'Account',
+        href: '/account',
+        icon: UserCog,
+    },
+    {
+        title: 'Help',
+        href: '/help',
+        icon: CircleHelp,
     },
 ];
 
 export function AppSidebar() {
     return (
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar
+            collapsible="icon"
+            variant="inset"
+            className="border-r border-[#18417f]/40 bg-[#18417f] text-white"
+        >
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
+                        <SidebarMenuButton
+                            size="lg"
+                            asChild
+                            className="text-white"
+                        >
                             <Link href={dashboard()} prefetch>
                                 <AppLogo />
                             </Link>
@@ -57,8 +97,8 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
-                <NavUser />
+              
+                <NavUser className="text-white" />
             </SidebarFooter>
         </Sidebar>
     );
