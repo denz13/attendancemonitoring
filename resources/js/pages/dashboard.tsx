@@ -34,7 +34,12 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Dashboard() {
+interface DashboardProps {
+    totalStudents: number;
+    totalUsers: number;
+}
+
+export default function Dashboard({ totalStudents, totalUsers }: DashboardProps) {
     const attendanceData = [
         { label: 'Jan', rate: 92 },
         { label: 'Feb', rate: 94 },
@@ -137,10 +142,10 @@ export default function Dashboard() {
                             Total Students
                         </p>
                         <div className="mt-3 text-3xl font-semibold text-foreground">
-                            1,245
+                            {totalStudents.toLocaleString()}
                         </div>
                         <p className="mt-2 text-xs text-muted-foreground">
-                            +4.2% vs last month
+                            Active student accounts
                         </p>
                     </div>
                     <div className="rounded-xl border border-sidebar-border/70 bg-card p-6 shadow-sm dark:border-sidebar-border">
@@ -159,7 +164,7 @@ export default function Dashboard() {
                             Total Users
                         </p>
                         <div className="mt-3 text-3xl font-semibold text-foreground">
-                            1,480
+                            {totalUsers.toLocaleString()}
                         </div>
                         <p className="mt-2 text-xs text-muted-foreground">
                             Includes faculty and admins

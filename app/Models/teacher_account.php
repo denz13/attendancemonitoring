@@ -15,7 +15,6 @@ class teacher_account extends Model
         'email',
         'password',
         'image',
-        'subject_id',
         'status',
     ];
 }

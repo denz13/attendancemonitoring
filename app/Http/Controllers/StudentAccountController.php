@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\student_account;
 use App\Models\subject;
 use App\Models\teacher_account;
+use App\Models\teacher_subject_tag;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -124,7 +125,6 @@ class StudentAccountController extends Controller
                     'email' => ['required', 'email', 'max:255', 'unique:teacher_account,email'],
                     'password' => ['required', 'string', 'min:6'],
                     'status' => ['required', Rule::in(['active', 'inactive'])],
-                    'subject_id' => ['required', 'integer', 'exists:subject,id'],
                     'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
                 ]);
 
@@ -138,7 +138,6 @@ class StudentAccountController extends Controller
                     'email' => $data['email'],
                     'password' => Hash::make($data['password']),
                     'status' => $data['status'],
-                    'subject_id' => $data['subject_id'],
                     'image' => $imagePath,
                 ]);
 
@@ -242,7 +241,6 @@ class StudentAccountController extends Controller
                     'fullname' => ['required', 'string', 'max:255'],
                     'email' => ['required', 'email', 'max:255', Rule::unique('teacher_account', 'email')->ignore($id)],
                     'password' => ['nullable', 'string', 'min:6'],
-                    'subject_id' => ['required', 'integer', 'exists:subject,id'],
                     'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
                 ]);
 
@@ -250,7 +248,6 @@ class StudentAccountController extends Controller
                 $updateData = [
                     'fullname' => $data['fullname'],
                     'email' => $data['email'],
-                    'subject_id' => $data['subject_id'],
                 ];
 
                 if (!empty($data['password'])) {
@@ -343,6 +340,69 @@ class StudentAccountController extends Controller
         return redirect()
             ->route('users')
             ->with('success', $message);
+    }
+
+    public function getTeacherSubjects(int $teacherId)
+    {
+        $teacher = teacher_account::findOrFail($teacherId);
+        $taggedSubjects = teacher_subject_tag::where('teacher_id', $teacherId)
+            ->where('status', 'active')
+            ->pluck('subject_id')
+            ->map(fn($id) => (int) $id)
+            ->values()
+            ->toArray();
+
+        $subjects = subject::where('status', 'active')
+            ->orderBy('subject')
+            ->get(['id', 'subject_code', 'subject']);
+
+        return response()->json([
+            'teacher' => [
+                'id' => $teacher->id,
+                'fullname' => $teacher->fullname,
+            ],
+            'subjects' => $subjects,
+            'taggedSubjects' => $taggedSubjects,
+        ]);
+    }
+
+    public function tagSubjects(Request $request, int $teacherId): RedirectResponse
+    {
+        $validated = $request->validate([
+            'subject_ids' => ['array'],
+            'subject_ids.*' => ['integer', 'exists:subject,id'],
+        ]);
+
+        $selectedSubjectIds = $validated['subject_ids'] ?? [];
+
+        // Get all existing active tags for this teacher
+        $existingTags = teacher_subject_tag::where('teacher_id', $teacherId)
+            ->where('status', 'active')
+            ->get();
+
+        // Mark unchecked subjects as inactive (remove from active tags)
+        foreach ($existingTags as $tag) {
+            if (!in_array($tag->subject_id, $selectedSubjectIds)) {
+                $tag->update(['status' => 'inactive']);
+            }
+        }
+
+        // Add or activate selected subjects
+        foreach ($selectedSubjectIds as $subjectId) {
+            teacher_subject_tag::updateOrCreate(
+                [
+                    'teacher_id' => $teacherId,
+                    'subject_id' => $subjectId,
+                ],
+                [
+                    'status' => 'active',
+                ]
+            );
+        }
+
+        return redirect()
+            ->route('users')
+            ->with('success', 'Subjects tagged successfully.');
     }
 }
 

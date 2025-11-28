@@ -21,7 +21,7 @@ import {
     type TeacherAccount,
 } from '@/types';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Tag } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/toast';
 
@@ -56,6 +56,9 @@ export default function Users({
     const [isSelectModalOpen, setIsSelectModalOpen] = useState(false);
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isTagModalOpen, setIsTagModalOpen] = useState(false);
+    const [taggingTeacher, setTaggingTeacher] = useState<TeacherAccount | null>(null);
+    const [taggedSubjectIds, setTaggedSubjectIds] = useState<number[]>([]);
     const [activeType, setActiveType] = useState<AccountType>('student');
 
     useEffect(() => {
@@ -84,7 +87,6 @@ export default function Users({
         section: '',
         password: '',
         status: 'active',
-        subject_id: '',
         image: null as File | null,
     });
 
@@ -99,7 +101,6 @@ export default function Users({
             section: '',
             password: '',
             status: 'active',
-            subject_id: '',
             image: null,
         });
         form.clearErrors();
@@ -183,7 +184,6 @@ export default function Users({
         year_level: '1st Year',
         section: '',
         password: '',
-        subject_id: '',
         image: null as File | null,
     });
 
@@ -202,7 +202,6 @@ export default function Users({
                 password: '',
                 name: '',
                 email: '',
-                subject_id: '',
                 image: null,
             });
         } else if (type === 'teacher') {
@@ -210,7 +209,6 @@ export default function Users({
             editForm.setData({
                 fullname: teacher.fullname,
                 email: teacher.email,
-                subject_id: teacher.subject_id?.toString() || '',
                 password: '',
                 name: '',
                 student_id: '',
@@ -228,7 +226,6 @@ export default function Users({
                 student_id: '',
                 year_level: '1st Year',
                 section: '',
-                subject_id: '',
                 image: null,
             });
         }
@@ -296,6 +293,56 @@ export default function Users({
                 },
             });
         }
+    };
+
+    const handleTagSubject = async (teacher: TeacherAccount) => {
+        setTaggingTeacher(teacher);
+        setIsTagModalOpen(true);
+        try {
+            const response = await fetch(`/teachers/${teacher.id}/subjects`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch subjects');
+            }
+            const data = await response.json();
+            // Ensure we convert to numbers for proper comparison
+            const taggedIds = (data.taggedSubjects || []).map((id: string | number) => Number(id));
+            setTaggedSubjectIds(taggedIds);
+        } catch (error) {
+            showError('Error', 'Failed to load subjects. Please try again.');
+            setIsTagModalOpen(false);
+        }
+    };
+
+    const handleTagSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (!taggingTeacher) return;
+
+        router.post(
+            `/teachers/${taggingTeacher.id}/tag-subjects`,
+            { subject_ids: taggedSubjectIds },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setIsTagModalOpen(false);
+                    setTaggingTeacher(null);
+                    setTaggedSubjectIds([]);
+                    showSuccess('Success', 'Subjects tagged successfully.');
+                },
+                onError: (errors) => {
+                    const errorMessage = errors?.message || 'Failed to tag subjects. Please try again.';
+                    showError('Error', errorMessage);
+                },
+            },
+        );
+    };
+
+    const toggleSubjectTag = (subjectId: number) => {
+        setTaggedSubjectIds((prev) => {
+            const numId = Number(subjectId);
+            return prev.includes(numId)
+                ? prev.filter((id) => Number(id) !== numId)
+                : [...prev, numId];
+        });
     };
 
     const renderFormFields = () => {
@@ -422,26 +469,6 @@ export default function Users({
                         <InputError message={form.errors.email} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="teacher_subject">Subject</Label>
-                        <select
-                            id="teacher_subject"
-                            value={form.data.subject_id}
-                            onChange={(event) =>
-                                form.setData('subject_id', event.target.value)
-                            }
-                            className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            required
-                        >
-                            <option value="">Select a subject</option>
-                            {subjects.map((subject) => (
-                                <option key={subject.id} value={subject.id}>
-                                    {subject.subject_code} - {subject.subject}
-                                </option>
-                            ))}
-                        </select>
-                        <InputError message={form.errors.subject_id} />
-                    </div>
-                    <div className="grid gap-2">
                         <Label htmlFor="teacher_password">Password</Label>
                         <Input
                             id="teacher_password"
@@ -476,7 +503,7 @@ export default function Users({
             );
         }
 
-        return (
+    return (
             <>
                 <div className="grid gap-2">
                     <Label htmlFor="admin_name">Full name</Label>
@@ -663,26 +690,6 @@ export default function Users({
                         <InputError message={editForm.errors.email} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="edit_teacher_subject">Subject</Label>
-                        <select
-                            id="edit_teacher_subject"
-                            value={editForm.data.subject_id}
-                            onChange={(event) =>
-                                editForm.setData('subject_id', event.target.value)
-                            }
-                            required
-                            className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                            <option value="">Select a subject</option>
-                            {subjects.map((subject) => (
-                                <option key={subject.id} value={subject.id}>
-                                    {subject.subject_code} - {subject.subject}
-                                </option>
-                            ))}
-                        </select>
-                        <InputError message={editForm.errors.subject_id} />
-                    </div>
-                    <div className="grid gap-2">
                         <Label htmlFor="edit_teacher_password">Password (Leave blank to keep current)</Label>
                         <Input
                             id="edit_teacher_password"
@@ -693,7 +700,7 @@ export default function Users({
                             }
                         />
                         <InputError message={editForm.errors.password} />
-                    </div>
+                        </div>
                     <div className="grid gap-2 md:col-span-2">
                         <Label htmlFor="edit_teacher_image">Profile Image (Optional)</Label>
                         <Input
@@ -772,7 +779,7 @@ export default function Users({
                             Selected: {editForm.data.image.name}
                         </p>
                     )}
-                </div>
+                        </div>
             </>
         );
     };
@@ -880,6 +887,85 @@ export default function Users({
                     </DialogContent>
                 </Dialog>
 
+                <Dialog
+                    open={isTagModalOpen}
+                    onOpenChange={(open) => {
+                        setIsTagModalOpen(open);
+                        if (!open) {
+                            setTaggingTeacher(null);
+                            setTaggedSubjectIds([]);
+                        }
+                    }}
+                >
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>
+                                Tag Subjects for {taggingTeacher?.fullname}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Select the subjects to assign to this teacher.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleTagSubmit}>
+                            <div className="grid gap-4">
+                                <div className="max-h-96 overflow-y-auto rounded-md border border-input p-4">
+                                    {subjects.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground">
+                                            No subjects available.
+                                        </p>
+                                    ) : (
+                                        <div className="grid gap-2">
+                                            {subjects.map((subject) => (
+                                                <label
+                                                    key={subject.id}
+                                                    className="flex items-center gap-3 rounded-md border border-input p-3 hover:bg-accent cursor-pointer"
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={taggedSubjectIds.includes(
+                                                            Number(subject.id),
+                                                        )}
+                                                        onChange={() =>
+                                                            toggleSubjectTag(
+                                                                subject.id,
+                                                            )
+                                                        }
+                                                        className="h-4 w-4 rounded border-input"
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="text-sm font-medium">
+                                                            {subject.subject_code}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {subject.subject}
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setIsTagModalOpen(false);
+                                            setTaggingTeacher(null);
+                                            setTaggedSubjectIds([]);
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit">
+                                        Save Tags
+                                    </Button>
+                                </div>
+                            </div>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
                 <div className="overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border bg-card shadow-sm">
                     <div className="flex items-center justify-between border-b px-6 py-4">
                         <div>
@@ -958,7 +1044,7 @@ export default function Users({
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <button
+                            <button
                                                 type="button"
                                                 onClick={() =>
                                                     handleToggleStatus(
@@ -1104,10 +1190,21 @@ export default function Users({
                                                                 : 'translate-x-1'
                                                         }`}
                                                     />
-                                                </button>
+                            </button>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            handleTagSubject(teacher)
+                                                        }
+                                                        title="Tag Subject"
+                                                    >
+                                                        <Tag className="h-4 w-4" />
+                                                    </Button>
                                                     <Button
                                                         type="button"
                                                         variant="outline"
