@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class teacher_account extends Model
+class teacher_account extends Authenticatable
 {
-    //
+    use Notifiable;
+
     protected $table = 'teacher_account';
     protected $primaryKey = 'id';
     public $timestamps = false;
+
     protected $fillable = [
         'fullname',
         'email',
@@ -17,4 +20,16 @@ class teacher_account extends Model
         'image',
         'status',
     ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'password' => 'hashed',
+        ];
+    }
 }

@@ -11,8 +11,8 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
+import { type NavItem, type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import {
     BarChart3,
     BookOpen,
@@ -26,7 +26,8 @@ import {
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
+// Admin navigation items
+const adminNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
@@ -69,7 +70,22 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
+// Teacher navigation items (limited to Dashboard only)
+const teacherNavItems: NavItem[] = [
+    {
+        title: 'Dashboard',
+        href: dashboard(),
+        icon: LayoutGrid,
+    },
+];
+
 export function AppSidebar() {
+    const page = usePage<SharedData>();
+    const userRole = page.props.auth?.role || 'guest';
+    
+    // Filter navigation items based on user role
+    const mainNavItems = userRole === 'teacher' ? teacherNavItems : adminNavItems;
+
     return (
         <Sidebar
             collapsible="icon"

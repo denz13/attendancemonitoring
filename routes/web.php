@@ -4,19 +4,22 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SchedulesController;
 use App\Http\Controllers\StudentAccountController;
 use App\Http\Controllers\SubjectController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
 Route::get('/', function () {
-    return Inertia::render('welcome', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
+    if (Auth::check() || Auth::guard('student')->check() || Auth::guard('teacher')->check()) {
+        return redirect()->route('dashboard');
+    }
+    return redirect('/login');
 })->name('home');
 
+// Dashboard accessible by admin (web guard) and teacher (teacher guard)
+Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');
 
     Route::get('users', [StudentAccountController::class, 'index'])
         ->name('users');
