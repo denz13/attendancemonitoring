@@ -58,11 +58,11 @@ const adminNavItems: NavItem[] = [
         href: '/subject',
         icon: BookOpen,
     },
-    {
-        title: 'Account',
-        href: '/account',
-        icon: UserCog,
-    },
+    // {
+    //     title: 'Account',
+    //     href: '/account',
+    //     icon: UserCog,
+    // },
     {
         title: 'Help',
         href: '/help',
@@ -79,12 +79,26 @@ const teacherNavItems: NavItem[] = [
     },
 ];
 
+// Student navigation items (limited to Dashboard only)
+const studentNavItems: NavItem[] = [
+    {
+        title: 'Dashboard',
+        href: dashboard(),
+        icon: LayoutGrid,
+    },
+];
+
 export function AppSidebar() {
     const page = usePage<SharedData>();
     const userRole = page.props.auth?.role || 'guest';
     
     // Filter navigation items based on user role
-    const mainNavItems = userRole === 'teacher' ? teacherNavItems : adminNavItems;
+    let mainNavItems = adminNavItems;
+    if (userRole === 'teacher') {
+        mainNavItems = teacherNavItems;
+    } else if (userRole === 'student') {
+        mainNavItems = studentNavItems;
+    }
 
     return (
         <Sidebar

@@ -41,6 +41,42 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('schedules', [SchedulesController::class, 'index'])->name('schedules');
     Route::post('schedules', [SchedulesController::class, 'store'])->name('schedules.store');
+
+    Route::get('reports', function () {
+        return Inertia::render('reports', [
+            'attendanceBySubject' => [],
+            'mostAbsentStudents' => [],
+            'punctualityTrend' => [],
+        ]);
+    })->name('reports');
+
+    Route::get('qr-codes', function () {
+        $students = \App\Models\student_account::query()
+            ->latest('id')
+            ->get([
+                'id',
+                'student_id',
+                'fullname',
+                'year_level',
+                'section',
+                'status',
+                'image',
+            ])
+            ->map(function ($student) {
+                $student->image_url = $student->image
+                    ? \Illuminate\Support\Facades\Storage::url($student->image)
+                    : null;
+                return $student;
+            });
+
+        return Inertia::render('qrcodes', [
+            'students' => $students,
+        ]);
+    })->name('qr-codes');
+
+    Route::get('help', function () {
+        return Inertia::render('help');
+    })->name('help');
 });
 
 require __DIR__.'/settings.php';

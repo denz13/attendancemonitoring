@@ -13,6 +13,17 @@ class DashboardController extends Controller
 {
     public function index(): Response
     {
+        // Check if user is logged in as student
+        if (Auth::guard('student')->check()) {
+            // Return student dashboard
+            return Inertia::render('dashboard/dashboard-student', [
+                'attendanceRate' => 30,
+                'recentAbsences' => [],
+                'todaySchedule' => [],
+                'tomorrowSchedule' => [],
+            ]);
+        }
+
         // Check if user is logged in as teacher
         if (Auth::guard('teacher')->check()) {
             // Return teacher dashboard
@@ -20,6 +31,11 @@ class DashboardController extends Controller
                 'classList' => [],
                 'attendanceSummary' => [],
             ]);
+        }
+
+        // Check if user is authenticated (admin)
+        if (!Auth::check()) {
+            return redirect('/login');
         }
 
         // Default admin dashboard
