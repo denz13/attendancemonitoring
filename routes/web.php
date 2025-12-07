@@ -41,14 +41,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('schedules', [SchedulesController::class, 'index'])->name('schedules');
     Route::post('schedules', [SchedulesController::class, 'store'])->name('schedules.store');
+    Route::post('schedules/enroll-student', [SchedulesController::class, 'enrollStudent'])->name('schedules.enroll-student');
+    Route::get('schedules/enrolled-students', [SchedulesController::class, 'getEnrolledStudents'])->name('schedules.enrolled-students');
+    Route::delete('schedules/remove-student', [SchedulesController::class, 'removeStudent'])->name('schedules.remove-student');
+    Route::post('qr-codes/validate-enrollment', [SchedulesController::class, 'validateStudentEnrollment'])->name('qr-codes.validate-enrollment');
+    Route::post('qr-codes/time-in', [SchedulesController::class, 'timeIn'])->name('qr-codes.time-in');
 
-    Route::get('reports', function () {
-        return Inertia::render('reports', [
-            'attendanceBySubject' => [],
-            'mostAbsentStudents' => [],
-            'punctualityTrend' => [],
-        ]);
-    })->name('reports');
+    Route::get('reports', [\App\Http\Controllers\ReportsController::class, 'index'])->name('reports');
 
     Route::get('qr-codes', function () {
         $students = \App\Models\student_account::query()
@@ -69,8 +68,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 return $student;
             });
 
+        // Get teacher's tagged subjects if logged in as teacher
+        $teacherSubjects = [];
+        if (\Illuminate\Support\Facades\Auth::guard('teacher')->check()) {
+            $teacher = \Illuminate\Support\Facades\Auth::guard('teacher')->user();
+            $teacherSubjects = \App\Models\teacher_subject_tag::where('teacher_id', $teacher->id)
+                ->where('status', 'active')
+                ->with(['subject:id,subject_code,subject,year_level,section'])
+                ->get()
+                ->map(function ($tag) {
+                    return [
+                        'id' => $tag->id,
+                        'subject_id' => $tag->subject_id,
+                        'subject_code' => $tag->subject->subject_code ?? '',
+                        'subject' => $tag->subject->subject ?? '',
+                        'year_level' => $tag->subject->year_level ?? '',
+                        'section' => $tag->subject->section ?? '',
+                    ];
+                })
+                ->filter(function ($tag) {
+                    return $tag['subject'] !== '';
+                })
+                ->values();
+        }
+
         return Inertia::render('qrcodes', [
             'students' => $students,
+            'teacherSubjects' => $teacherSubjects,
         ]);
     })->name('qr-codes');
 

@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -36,25 +36,9 @@ export default function DashboardTeacher({
     classList = [],
     attendanceSummary = [],
 }: DashboardTeacherProps) {
-    // Default sample data if none provided
-    const defaultClassList: ClassListEntry[] = classList.length > 0 ? classList : [
-        { studentName: 'John Doe', date: '01/13/25', status: 'Present', scanTime: '8:00 AM' },
-        { studentName: 'John Doe', date: '01/13/25', status: 'Present', scanTime: '8:00 AM' },
-        { studentName: 'John Doe', date: '01/13/25', status: 'Present', scanTime: '8:00 AM' },
-        { studentName: 'John Doe', date: '01/13/25', status: 'Present', scanTime: '8:00 AM' },
-        { studentName: 'John Doe', date: '01/13/25', status: 'Present', scanTime: '8:00 AM' },
-        { studentName: 'John Doe', date: '01/13/25', status: 'Present', scanTime: '8:00 AM' },
-        { studentName: 'John Doe', date: '01/13/25', status: 'Late', scanTime: '8:10 AM' },
-    ];
-
-    const defaultAttendanceSummary: AttendanceSummaryEntry[] = attendanceSummary.length > 0 ? attendanceSummary : [
-        { class: 'GRADE 7 - A', date: 'October 20', present: 50, absent: 0, attendanceRate: 100 },
-        { class: 'GRADE 8 - A', date: 'October 20', present: 30, absent: 15, attendanceRate: 80 },
-        { class: 'GRADE 9 - A', date: 'October 20', present: 10, absent: 35, attendanceRate: 10 },
-        { class: 'GRADE 10 - A', date: 'October 20', present: 15, absent: 18, attendanceRate: 30 },
-        { class: 'GRADE 11 - B', date: 'October 20', present: 25, absent: 19, attendanceRate: 60 },
-        { class: 'GRADE 12 - B', date: 'October 20', present: 28, absent: 12, attendanceRate: 70 },
-    ];
+    // Use provided data or empty arrays
+    const displayClassList = classList.length > 0 ? classList : [];
+    const displayAttendanceSummary = attendanceSummary.length > 0 ? attendanceSummary : [];
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -98,32 +82,43 @@ export default function DashboardTeacher({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {defaultClassList.map((entry, index) => (
-                                        <tr
-                                            key={index}
-                                            className={`border-b border-sidebar-border/70 ${
-                                                index % 2 === 0 ? 'bg-white' : 'bg-gray-50 dark:bg-gray-900'
-                                            }`}
-                                        >
-                                            <td className="px-4 py-3 text-sm text-foreground">
-                                                {entry.studentName}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-foreground">
-                                                {entry.date}
-                                            </td>
-                                            <td className={`px-4 py-3 text-sm font-medium ${getStatusColor(entry.status)}`}>
-                                                {entry.status}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-foreground">
-                                                {entry.scanTime}
+                                    {displayClassList.length > 0 ? (
+                                        displayClassList.map((entry, index) => (
+                                            <tr
+                                                key={index}
+                                                className={`border-b border-sidebar-border/70 ${
+                                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50 dark:bg-gray-900'
+                                                }`}
+                                            >
+                                                <td className="px-4 py-3 text-sm text-foreground">
+                                                    {entry.studentName}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-foreground">
+                                                    {entry.date}
+                                                </td>
+                                                <td className={`px-4 py-3 text-sm font-medium ${getStatusColor(entry.status)}`}>
+                                                    {entry.status}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-foreground">
+                                                    {entry.scanTime}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                                                No students enrolled for today's schedule
                                             </td>
                                         </tr>
-                                    ))}
+                                    )}
                                 </tbody>
                             </table>
                         </div>
                         <div className="border-t border-sidebar-border/70 p-4">
-                            <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                            <Button 
+                                className="w-full bg-blue-600 hover:bg-blue-700"
+                                onClick={() => router.visit('/qr-codes')}
+                            >
                                 <QrCode className="mr-2 h-4 w-4" />
                                 Scan QR Code
                             </Button>
@@ -157,30 +152,38 @@ export default function DashboardTeacher({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {defaultAttendanceSummary.map((entry, index) => (
-                                        <tr
-                                            key={index}
-                                            className={`border-b border-sidebar-border/70 ${
-                                                index % 2 === 0 ? 'bg-white' : 'bg-gray-50 dark:bg-gray-900'
-                                            }`}
-                                        >
-                                            <td className="px-4 py-3 text-sm font-medium text-foreground">
-                                                {entry.class}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-foreground">
-                                                {entry.date}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-foreground">
-                                                {entry.present}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-foreground">
-                                                {entry.absent}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm font-medium text-foreground">
-                                                {entry.attendanceRate}%
+                                    {displayAttendanceSummary.length > 0 ? (
+                                        displayAttendanceSummary.map((entry, index) => (
+                                            <tr
+                                                key={index}
+                                                className={`border-b border-sidebar-border/70 ${
+                                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50 dark:bg-gray-900'
+                                                }`}
+                                            >
+                                                <td className="px-4 py-3 text-sm font-medium text-foreground">
+                                                    {entry.class}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-foreground">
+                                                    {entry.date}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-foreground">
+                                                    {entry.present}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-foreground">
+                                                    {entry.absent}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm font-medium text-foreground">
+                                                    {entry.attendanceRate}%
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                                                No attendance data available
                                             </td>
                                         </tr>
-                                    ))}
+                                    )}
                                 </tbody>
                             </table>
                         </div>

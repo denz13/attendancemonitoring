@@ -39,24 +39,10 @@ export default function DashboardStudent({
 }: DashboardStudentProps) {
     const [activeTab, setActiveTab] = useState<'today' | 'tomorrow'>('today');
 
-    // Default sample data if none provided
-    const defaultRecentAbsences: RecentAbsence[] = recentAbsences.length > 0 ? recentAbsences : [
-        { date: 'October 20', subject: 'Math' },
-        { date: 'October 20', subject: 'Math' },
-        { date: 'October 20', subject: 'Math' },
-        { date: 'October 20', subject: 'Math' },
-    ];
-
-    const defaultTodaySchedule: ClassSchedule[] = todaySchedule.length > 0 ? todaySchedule : [
-        { date: 'October 26', time: '8:00 AM', subject: 'Science' },
-        { date: 'October 26', time: '8:00 AM', subject: 'Science' },
-        { date: 'October 26', time: '8:00 AM', subject: 'Science' },
-    ];
-
-    const defaultTomorrowSchedule: ClassSchedule[] = tomorrowSchedule.length > 0 ? tomorrowSchedule : [
-        { date: 'October 27', time: '8:00 AM', subject: 'English' },
-        { date: 'October 27', time: '9:00 AM', subject: 'History' },
-    ];
+    // Use provided data or empty arrays
+    const displayRecentAbsences = recentAbsences.length > 0 ? recentAbsences : [];
+    const displayTodaySchedule = todaySchedule.length > 0 ? todaySchedule : [];
+    const displayTomorrowSchedule = tomorrowSchedule.length > 0 ? tomorrowSchedule : [];
 
     const getAttendanceColor = (rate: number) => {
         if (rate >= 80) return 'text-green-600';
@@ -116,14 +102,20 @@ export default function DashboardStudent({
                                     Recent Absences
                                 </h3>
                                 <div className="space-y-2">
-                                    {defaultRecentAbsences.map((absence, index) => (
-                                        <div
-                                            key={index}
-                                            className="rounded-md border border-sidebar-border/70 bg-card p-3 text-sm text-foreground"
-                                        >
-                                            {absence.date}, {absence.subject}
+                                    {displayRecentAbsences.length > 0 ? (
+                                        displayRecentAbsences.map((absence, index) => (
+                                            <div
+                                                key={index}
+                                                className="rounded-md border border-sidebar-border/70 bg-card p-3 text-sm text-foreground"
+                                            >
+                                                {absence.date}, {absence.subject}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="rounded-md border border-sidebar-border/70 bg-card p-3 text-sm text-muted-foreground text-center">
+                                            No recent absences
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             </div>
                         </CardContent>
@@ -163,40 +155,54 @@ export default function DashboardStudent({
 
                             {/* Tab Content */}
                             <div className="space-y-3">
-                                {activeTab === 'today' &&
-                                    defaultTodaySchedule.map((schedule, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-center gap-3 rounded-lg bg-blue-600 p-4 text-white"
-                                        >
-                                            <Calendar className="h-5 w-5 shrink-0" />
-                                            <div className="flex-1">
-                                                <div className="font-medium">
-                                                    {schedule.date}, {schedule.time}
-                                                </div>
-                                                <div className="text-sm opacity-90">
-                                                    {schedule.subject}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                {activeTab === 'tomorrow' &&
-                                    defaultTomorrowSchedule.map((schedule, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-center gap-3 rounded-lg bg-blue-600 p-4 text-white"
-                                        >
-                                            <Calendar className="h-5 w-5 shrink-0" />
-                                            <div className="flex-1">
-                                                <div className="font-medium">
-                                                    {schedule.date}, {schedule.time}
-                                                </div>
-                                                <div className="text-sm opacity-90">
-                                                    {schedule.subject}
+                                {activeTab === 'today' && (
+                                    displayTodaySchedule.length > 0 ? (
+                                        displayTodaySchedule.map((schedule, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-center gap-3 rounded-lg bg-blue-600 p-4 text-white"
+                                            >
+                                                <Calendar className="h-5 w-5 shrink-0" />
+                                                <div className="flex-1">
+                                                    <div className="font-medium">
+                                                        {schedule.date}, {schedule.time}
+                                                    </div>
+                                                    <div className="text-sm opacity-90">
+                                                        {schedule.subject}
+                                                    </div>
                                                 </div>
                                             </div>
+                                        ))
+                                    ) : (
+                                        <div className="rounded-lg border border-sidebar-border/70 bg-card p-4 text-center text-sm text-muted-foreground">
+                                            No schedule for today
                                         </div>
-                                    ))}
+                                    )
+                                )}
+                                {activeTab === 'tomorrow' && (
+                                    displayTomorrowSchedule.length > 0 ? (
+                                        displayTomorrowSchedule.map((schedule, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-center gap-3 rounded-lg bg-blue-600 p-4 text-white"
+                                            >
+                                                <Calendar className="h-5 w-5 shrink-0" />
+                                                <div className="flex-1">
+                                                    <div className="font-medium">
+                                                        {schedule.date}, {schedule.time}
+                                                    </div>
+                                                    <div className="text-sm opacity-90">
+                                                        {schedule.subject}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="rounded-lg border border-sidebar-border/70 bg-card p-4 text-center text-sm text-muted-foreground">
+                                            No schedule for tomorrow
+                                        </div>
+                                    )
+                                )}
                             </div>
                         </CardContent>
                     </Card>
