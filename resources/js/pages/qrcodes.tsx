@@ -300,9 +300,39 @@ export default function QRCodes({ students = [], teacherSubjects = [] }: QRCodes
         };
     }, [isScanModalOpen, students]);
 
-    const handleDownloadQR = (student: StudentAccount) => {
-        // Placeholder for download functionality
-        console.log('Download QR for:', student);
+    const handleDownloadQR = async (student: StudentAccount) => {
+        try {
+            // Create QR code value
+            const qrValue = JSON.stringify({
+                fullname: student.fullname,
+                year_level: student.year_level,
+                section: student.section,
+                student_id: student.student_id,
+            });
+
+            // Use qrcode library to generate QR code as data URL
+            const QRCode = await import('qrcode');
+            const dataUrl = await QRCode.default.toDataURL(qrValue, {
+                width: 512,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF',
+                },
+                errorCorrectionLevel: 'M',
+            });
+
+            // Create download link
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = `${student.student_id}_${student.fullname.replace(/\s+/g, '_')}_QRCode.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Error downloading QR code:', error);
+            alert('Failed to download QR code. Please try again.');
+        }
     };
 
     const getInitials = (name: string) => {
