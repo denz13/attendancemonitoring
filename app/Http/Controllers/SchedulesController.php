@@ -299,16 +299,34 @@ class SchedulesController extends Controller
 
         $query = student_subject_enrolled::where('student_account_id', $validated['student_account_id'])
             ->where('status', 'active')
-            ->with(['schedules.teacher_subject_tag.subject']);
+            ->whereHas('schedules', function ($q) {
+                $q->where('status', 'active');
+            })
+            ->whereHas('schedules.teacher_subject_tag', function ($q) {
+                $q->where('status', 'active');
+            })
+            ->with(['schedules' => function ($q) {
+                $q->where('status', 'active');
+            }, 'schedules.teacher_subject_tag' => function ($q) {
+                $q->where('status', 'active');
+            }, 'schedules.teacher_subject_tag.subject']);
 
         // If subject_id is provided, filter by that subject
         if (isset($validated['subject_id'])) {
             $query->whereHas('schedules.teacher_subject_tag', function ($q) use ($validated) {
-                $q->where('subject_id', $validated['subject_id']);
+                $q->where('subject_id', $validated['subject_id'])
+                  ->where('status', 'active');
             });
         }
 
         $enrollments = $query->get();
+        
+        // Filter out enrollments with null schedules or teacher_subject_tags (due to whereHas constraints)
+        $enrollments = $enrollments->filter(function ($enrollment) {
+            return $enrollment->schedules 
+                && $enrollment->schedules->teacher_subject_tag 
+                && $enrollment->schedules->teacher_subject_tag->subject;
+        });
 
         if ($enrollments->isEmpty()) {
             return response()->json([

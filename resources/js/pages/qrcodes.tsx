@@ -195,24 +195,43 @@ export default function QRCodes({ students = [], teacherSubjects = [] }: QRCodes
                                 if (foundStudent) {
                                     setSelectedStudent(foundStudent);
                                     
-                                    // If teacher is logged in and subject is selected, validate enrollment for that subject
-                                    if (teacherSubjects.length > 0 && selectedSubject) {
+                                    // If teacher is logged in, require subject selection
+                                    if (teacherSubjects.length > 0) {
+                                        if (!selectedSubject) {
+                                            setScanError('Please select a subject first before scanning.');
+                                            return;
+                                        }
                                         // Validate enrollment for the selected subject
                                         try {
                                             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                                            
+                                            if (!csrfToken) {
+                                                setScanError('CSRF token not found. Please refresh the page.');
+                                                return;
+                                            }
+                                            
+                                            // Use fetch with proper CSRF handling
+                                            const formData = new FormData();
+                                            formData.append('student_account_id', foundStudent.id.toString());
+                                            formData.append('subject_id', selectedSubject.subject_id.toString());
+                                            formData.append('_token', csrfToken);
+                                            
                                             const response = await fetch('/qr-codes/validate-enrollment', {
                                                 method: 'POST',
                                                 headers: {
-                                                    'Content-Type': 'application/json',
                                                     'Accept': 'application/json',
                                                     'X-Requested-With': 'XMLHttpRequest',
                                                     'X-CSRF-TOKEN': csrfToken,
                                                 },
-                                                body: JSON.stringify({
-                                                    student_account_id: foundStudent.id,
-                                                    subject_id: selectedSubject.subject_id,
-                                                }),
+                                                body: formData,
+                                                credentials: 'same-origin',
                                             });
+                                            
+                                            if (!response.ok) {
+                                                const errorData = await response.json().catch(() => ({}));
+                                                setScanError(errorData.message || 'Student is not enrolled in the selected subject.');
+                                                return;
+                                            }
                                             
                                             const result = await response.json();
                                             
@@ -226,22 +245,37 @@ export default function QRCodes({ students = [], teacherSubjects = [] }: QRCodes
                                             console.error('Error validating enrollment:', error);
                                             setScanError('Failed to validate enrollment. Please try again.');
                                         }
-                                    } else if (teacherSubjects.length === 0) {
+                                    } else {
                                         // If not a teacher, use the old validation
                                         try {
                                             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                                            
+                                            if (!csrfToken) {
+                                                setScanError('CSRF token not found. Please refresh the page.');
+                                                return;
+                                            }
+                                            
+                                            // Use fetch with proper CSRF handling
+                                            const formData = new FormData();
+                                            formData.append('student_account_id', foundStudent.id.toString());
+                                            formData.append('_token', csrfToken);
+                                            
                                             const response = await fetch('/qr-codes/validate-enrollment', {
                                                 method: 'POST',
                                                 headers: {
-                                                    'Content-Type': 'application/json',
                                                     'Accept': 'application/json',
                                                     'X-Requested-With': 'XMLHttpRequest',
                                                     'X-CSRF-TOKEN': csrfToken,
                                                 },
-                                                body: JSON.stringify({
-                                                    student_account_id: foundStudent.id,
-                                                }),
+                                                body: formData,
+                                                credentials: 'same-origin',
                                             });
+                                            
+                                            if (!response.ok) {
+                                                const errorData = await response.json().catch(() => ({}));
+                                                setScanError(errorData.message || 'Student is not enrolled in any subject.');
+                                                return;
+                                            }
                                             
                                             const result = await response.json();
                                             
@@ -255,8 +289,6 @@ export default function QRCodes({ students = [], teacherSubjects = [] }: QRCodes
                                             console.error('Error validating enrollment:', error);
                                             setScanError('Failed to validate enrollment. Please try again.');
                                         }
-                                    } else {
-                                        setScanError('Please select a subject first.');
                                     }
                                 } else {
                                     setScanError('Student not found in the system.');
@@ -475,6 +507,8 @@ export default function QRCodes({ students = [], teacherSubjects = [] }: QRCodes
                     setIsScanning(false);
                     setScanResult(null);
                     setSelectedStudent(null);
+                    setSelectedSubject(null);
+                    setScanError(null);
                 }
             }}>
                 <DialogContent className="sm:max-w-md">
@@ -485,6 +519,30 @@ export default function QRCodes({ students = [], teacherSubjects = [] }: QRCodes
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
+                        {/* Subject Selection for Teachers */}
+                        {teacherSubjects.length > 0 && (
+                            <div className="space-y-2">
+                                <Label>Select Subject</Label>
+                                <select
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={selectedSubject?.subject_id || ''}
+                                    onChange={(e) => {
+                                        const subject = teacherSubjects.find(
+                                            (s) => s.subject_id.toString() === e.target.value
+                                        );
+                                        setSelectedSubject(subject || null);
+                                    }}
+                                >
+                                    <option value="">Select a subject</option>
+                                    {teacherSubjects.map((subject) => (
+                                        <option key={subject.id} value={subject.subject_id}>
+                                            {subject.subject_code} - {subject.subject}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
                         {/* QR Code Scanner */}
                         <div className="flex flex-col items-center gap-4">
                             <div
